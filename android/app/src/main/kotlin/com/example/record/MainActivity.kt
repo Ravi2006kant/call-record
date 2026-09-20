@@ -1,108 +1,33 @@
 package com.example.record
 
-import android.content.BroadcastReceiver
+import android.Manifest
 import android.content.Context
 import android.content.Intent
-import android.content.IntentFilter
-import android.telephony.TelephonyManager
+import android.media.MediaPlayer
+import android.net.Uri
+import android.os.Build
+import android.os.PowerManager
+import android.provider.Settings
 import io.flutter.embedding.android.FlutterActivity
+import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
 
 class MainActivity : FlutterActivity() {
 
-    private val CHANNEL = "call_detection"
+    private val channelName = "call_recorder"
+    private val reqCode = 42
 
-    private lateinit var callReceiver: BroadcastReceiver
+    private var channel: MethodChannel? = null
+    private var player: MediaPlayer? = null
+    private var pendingResult: MethodChannel.Result? = null
 
-    override fun onCreate(savedInstanceState: android.os.Bundle?) {
-        super.onCreate(savedInstanceState)
+    override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
+        super.configureFlutterEngine(flutterEngine)
 
-        MethodChannel(
-            flutterEngine!!.dartExecutor.binaryMessenger,
-            CHANNEL
-        ).setMethodCallHandler { call, result ->
+        val ch = MethodChannel(flutterEngine.dartExecutor.binaryMessenger, channelName)
+        channel = ch
 
+        ch.setMethodCallHandler { call, result ->
             when (call.method) {
-
-                "startCallDetection" -> {
-                    startCallDetection()
-                    result.success("Call detection started")
-                }
-
-                else -> {
-                    result.notImplemented()
-                }
-            }
-        }
-    }
-
-    private fun startCallDetection() {
-
-        callReceiver = object : BroadcastReceiver() {
-
-            override fun onReceive(
-                context: Context?,
-                intent: Intent?
-            ) {
-
-                if (intent?.action != TelephonyManager.ACTION_PHONE_STATE_CHANGED) {
-                    return
-                }
-
-                val state = intent.getStringExtra(
-                    TelephonyManager.EXTRA_STATE
-                )
-
-                when (state) {
-
-                    TelephonyManager.EXTRA_STATE_RINGING -> {
-                        sendCallStatus("INCOMING CALL")
-                    }
-
-                    TelephonyManager.EXTRA_STATE_OFFHOOK -> {
-                        sendCallStatus("CALL ACTIVE")
-                    }
-
-                    TelephonyManager.EXTRA_STATE_IDLE -> {
-                        sendCallStatus("CALL ENDED")
-                    }
-                }
-            }
-        }
-
-        val filter = IntentFilter(
-            TelephonyManager.ACTION_PHONE_STATE_CHANGED
-        )
-
-        registerReceiver(callReceiver, filter)
-    }
-
-    private fun sendCallStatus(status: String) {
-
-        runOnUiThread {
-
-            flutterEngine
-                ?.dartExecutor
-                ?.binaryMessenger
-                ?.let { messenger ->
-
-                    MethodChannel(
-                        messenger,
-                        CHANNEL
-                    ).invokeMethod(
-                        "callStatusChanged",
-                        status
-                    )
-                }
-        }
-    }
-
-    override fun onDestroy() {
-
-        if (::callReceiver.isInitialized) {
-            unregisterReceiver(callReceiver)
-        }
-
-        super.onDestroy()
-    }
-}
+                "hasPermissions" -> result.success(hasCorePermissions())
+                "requestPermissions" -> requestPermissionsFromUser(result)
