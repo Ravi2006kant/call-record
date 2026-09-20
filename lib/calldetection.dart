@@ -30,6 +30,17 @@ class _CallDetectionScreenState
   @override
   void initState() {
     super.initState();
+
+    callChannel.setMethodCallHandler((call) async {
+
+      if (call.method == 'callStatusChanged') {
+
+        setState(() {
+          callStatus = call.arguments.toString();
+        });
+      }
+    });
+
     startDetection();
   }
 
