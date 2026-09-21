@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'dart:io';
-
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -58,7 +57,7 @@ class _RecordingsScreenState extends State<RecordingsScreen>
 
   List<Recording> _recordings = [];
   final Set<String> _baseline = {}; // recordings that existed at first scan
-  final Set<String> _newPaths = {}; // recordings that appeared afterwards
+  final Set<String> _newPaths = {}; // recordings which appeared afterwards
   final Set<String> _knownFolders = {};
   Timer? _timer;
 
